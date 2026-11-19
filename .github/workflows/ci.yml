@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write # tag 推送时创建 GitHub Release 需要
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Assemble release APK
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: 清影相册 ${{ github.ref_name }}
+          body: |
+            清影相册 ${{ github.ref_name }}
+
+            纯本地、不联网的 Android 相册：时光 / 相册 / 视频三页，日 · 月 · 年聚合，
+            实况照片支持，顶部单条件筛选，右边缘快速就位条，底部液态玻璃标签栏，
+            自带系统相册式多选、收藏、删除与查看器。
+
+            - 无任何网络权限，全部数据来自本机 MediaStore
+            - minify + shrink 的 Release 构建
+
+            安装：下载下方 APK（使用 debug 签名，仅供直接安装体验）。
+          files: app/build/outputs/apk/release/app-release.apk
+          generate_release_notes: true
