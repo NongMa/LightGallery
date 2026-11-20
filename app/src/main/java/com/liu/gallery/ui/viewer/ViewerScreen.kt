@@ -640,22 +640,15 @@ private fun ZoomableImage(
         )
     }
 
+    // 未放大时：不注册变换手势，单指水平拖动交给 HorizontalPager 翻页。
+    // 放大后：同步注册变换手势（平移+缩放）和点击手势。
+    val isZoomed = scale > 1.01f
+
     Box(
         modifier = modifier
             .onSizeChanged { boxSize = it }
             .pointerInput(item.id) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    val next = (scale * zoom).coerceIn(1f, 6f)
-                    if (next <= 1.01f) {
-                        scale = 1f
-                        offset = androidx.compose.ui.geometry.Offset.Zero
-                    } else {
-                        scale = next
-                        offset = clamp(offset + pan, next)
-                    }
-                }
-            }
-            .pointerInput(item.id) {
+                // 始终注册点击：单击/双击可放大/缩小
                 detectTapGestures(
                     onTap = { onSingleTap() },
                     onDoubleTap = { position ->
@@ -675,6 +668,21 @@ private fun ZoomableImage(
                         }
                     },
                 )
+                // 只有放大时才注册变换手势（平移+缩放），未放大时不注册，水平拖动可翻页
+                if (isZoomed) {
+                    detectTransformGestures(
+                        onGesture = { _, pan, zoom, _ ->
+                            val next = (scale * zoom).coerceIn(1f, 6f)
+                            if (next <= 1.01f) {
+                                scale = 1f
+                                offset = androidx.compose.ui.geometry.Offset.Zero
+                            } else {
+                                scale = next
+                                offset = clamp(offset + pan, next)
+                            }
+                        },
+                    )
+                }
             },
     ) {
         AsyncImage(
