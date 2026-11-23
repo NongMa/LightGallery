@@ -364,7 +364,7 @@ private fun AboutRow() {
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 复用自绘图标（白色底 + 彩色花瓣），无需额外资源
+        // 复用自绘图标（深藏青底 + 彩色花瓣），无需额外资源
         Box(
             modifier = Modifier
                 .size(48.dp)

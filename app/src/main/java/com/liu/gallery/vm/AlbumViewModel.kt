@@ -11,6 +11,8 @@ import com.liu.gallery.data.Album
 import com.liu.gallery.data.MediaFilter
 import com.liu.gallery.data.MediaType
 import com.liu.gallery.data.GroupMode
+import com.liu.gallery.data.ImageFilter
+import com.liu.gallery.data.TrimExporter
 import com.liu.gallery.data.MediaGroup
 import com.liu.gallery.data.MediaItem
 import com.liu.gallery.data.MediaRepository
@@ -306,11 +308,78 @@ class AlbumViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun closeViewer() {
+        _trimTarget.value = null
         _viewer.value = null
     }
 
     fun viewerPage(page: Int) {
         _viewer.update { v -> if (v == null) v else v.copy(index = page) }
+    }
+
+    // ------------------------------------------------------------- 剪辑
+
+    /** 当前待剪辑的媒体项（null = 未打开剪辑界面） */
+    private val _trimTarget = MutableStateFlow<MediaItem?>(null)
+    val trimTarget: StateFlow<MediaItem?> = _trimTarget.asStateFlow()
+
+    /** 剪辑导出中（另存为新文件），用于禁用按钮 */
+    private val _trimBusy = MutableStateFlow(false)
+    val trimBusy: StateFlow<Boolean> = _trimBusy.asStateFlow()
+
+    private var trimJob: Job? = null
+
+    /** 打开剪辑流程：视频 → 视频裁剪，图片 → 滤镜/旋转 */
+    fun onTrim(item: MediaItem?) {
+        if (item == null) { closeTrim(); return }
+        _trimTarget.value = item
+    }
+
+    /** 关闭剪辑界面 */
+    fun closeTrim() {
+        _trimTarget.value = null
+    }
+
+    /** 图片导出：应用滤镜 + 旋转后另存为新文件 */
+    fun exportImageEdit(filter: ImageFilter?, rotationDeg: Int) {
+        val item = _trimTarget.value ?: return
+        if (item.isVideo) return
+        if (_trimBusy.value) return
+        _trimBusy.value = true
+        trimJob = viewModelScope.launch {
+            val uri = withContext(Dispatchers.IO) {
+                TrimExporter.exportImageEdit(getApplication(), item, filter, rotationDeg)
+            }
+            _trimBusy.value = false
+            if (uri != null) {
+                toast("已保存编辑后的图片")
+                _trimTarget.value = null
+                refresh()
+            } else {
+                toast("图片编辑失败")
+            }
+        }
+    }
+
+    /** 视频导出：裁剪时间范围后另存为新文件 */
+    fun exportVideoClip(startMs: Long, endMs: Long) {
+        val item = _trimTarget.value ?: return
+        if (!item.isVideo) return
+        if (endMs <= startMs) { toast("时间范围无效"); return }
+        if (_trimBusy.value) return
+        _trimBusy.value = true
+        trimJob = viewModelScope.launch {
+            val uri = withContext(Dispatchers.IO) {
+                TrimExporter.exportVideoClip(getApplication(), item, startMs, endMs)
+            }
+            _trimBusy.value = false
+            if (uri != null) {
+                toast("已保存裁剪后的视频")
+                _trimTarget.value = null
+                refresh()
+            } else {
+                toast("视频裁剪失败")
+            }
+        }
     }
 
     // ------------------------------------------------------------ 删除/收藏

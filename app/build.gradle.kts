@@ -14,8 +14,8 @@ android {
         applicationId = "com.liu.gallery"
         minSdk = 26          // 覆盖 Android 8.0 及以上
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 3
+        versionName = "1.0.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

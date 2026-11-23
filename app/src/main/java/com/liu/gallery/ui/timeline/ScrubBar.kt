@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +58,14 @@ internal fun TimelineScrubBar(
 ) {
     var rootHeightPx by remember { mutableIntStateOf(0) }
     var revealed by remember { mutableStateOf(false) }
+
+    // 轨道/旋钮/胶囊配色：浅色模式白底深痕，深色模式深底浅痕（避免深色页面上出现刺眼白条）
+    val dark = isSystemInDarkTheme()
+    val surfaceColor = if (dark) Color(0xFF2C2C2E) else Color.White
+    val hairlineColor = if (dark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.08f)
+    val dotColor = if (dark) Color.White.copy(alpha = 0.35f) else Color.Black.copy(alpha = 0.32f)
+    val gripColor = if (dark) Color.White.copy(alpha = 0.6f) else Color(0xFF6E6E6E).copy(alpha = 0.85f)
+    val labelColor = if (dark) Color(0xFFE4E1E9) else Color(0xFF3A3A3A)
 
     // 平铺总条目数（每组 1 个头 + N 个单元格）
     val totalFlat = remember(groups) {
@@ -182,8 +191,8 @@ internal fun TimelineScrubBar(
                             .align(Alignment.Center)
                             .shadow(2.dp, RoundedCornerShape(50))
                             .clip(RoundedCornerShape(50))
-                            .background(Color.White.copy(alpha = 0.96f))
-                            .border(0.5.dp, Color.Black.copy(alpha = 0.08f), RoundedCornerShape(50)),
+                            .background(surfaceColor.copy(alpha = 0.96f))
+                            .border(0.5.dp, hairlineColor, RoundedCornerShape(50)),
                     )
                     if (rootHeightPx > 0) {
                         // 刻度点（灰点列，居中于轨道）
@@ -196,7 +205,7 @@ internal fun TimelineScrubBar(
                                     .align(Alignment.TopCenter)
                                     .size(4.dp)
                                     .clip(RoundedCornerShape(50))
-                                    .background(Color.Black.copy(alpha = 0.32f)),
+                                    .background(dotColor),
                             )
                         }
 
@@ -210,8 +219,8 @@ internal fun TimelineScrubBar(
                                 .size(knobSizeDp)
                                 .shadow(3.dp, RoundedCornerShape(50))
                                 .clip(RoundedCornerShape(50))
-                                .background(Color.White)
-                                .border(0.5.dp, Color.Black.copy(alpha = 0.12f), RoundedCornerShape(50)),
+                                .background(surfaceColor)
+                                .border(0.5.dp, hairlineColor, RoundedCornerShape(50)),
                             contentAlignment = Alignment.Center,
                         ) {
                             Column(
@@ -224,7 +233,7 @@ internal fun TimelineScrubBar(
                                             .width(9.dp)
                                             .height(1.4.dp)
                                             .clip(RoundedCornerShape(50))
-                                            .background(Color(0xFF6E6E6E).copy(alpha = 0.85f)),
+                                            .background(gripColor),
                                     )
                                 }
                             }
@@ -254,8 +263,8 @@ internal fun TimelineScrubBar(
                                 .height(shortHeightDp)
                                 .shadow(3.dp, RoundedCornerShape(50))
                                 .clip(RoundedCornerShape(50))
-                                .background(Color.White.copy(alpha = 0.97f))
-                                .border(0.5.dp, Color.Black.copy(alpha = 0.12f), RoundedCornerShape(50)),
+                                .background(surfaceColor.copy(alpha = 0.97f))
+                                .border(0.5.dp, hairlineColor, RoundedCornerShape(50)),
                             contentAlignment = Alignment.Center,
                         ) {
                             Column(
@@ -268,7 +277,7 @@ internal fun TimelineScrubBar(
                                             .width(8.dp)
                                             .height(1.4.dp)
                                             .clip(RoundedCornerShape(50))
-                                            .background(Color(0xFF6E6E6E).copy(alpha = 0.85f)),
+                                            .background(gripColor),
                                     )
                                 }
                             }
@@ -291,13 +300,13 @@ internal fun TimelineScrubBar(
                             .height(chipHeightDp)
                             .shadow(2.dp, RoundedCornerShape(50))
                             .clip(RoundedCornerShape(50))
-                            .background(Color.White.copy(alpha = 0.98f))
-                            .border(0.5.dp, Color.Black.copy(alpha = 0.08f), RoundedCornerShape(50)),
+                            .background(surfaceColor.copy(alpha = 0.98f))
+                            .border(0.5.dp, hairlineColor, RoundedCornerShape(50)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = "$year",
-                            color = Color(0xFF3A3A3A),
+                            color = labelColor,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,

@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Crop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -164,6 +165,16 @@ fun ViewerScreen(
 
     var showInfo by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<MediaItem?>(null) }
+
+    // 剪辑界面（非空时全屏覆盖层）
+    val trimTarget by vm.trimTarget.collectAsState()
+    val trimBusy by vm.trimBusy.collectAsState()
+
+    // 剪辑页打开时，系统返回键先关剪辑页（消费事件），而不是退出查看器；
+    // 关闭剪辑页后 BackHandler 自动失效，返回键恢复为退出查看器。
+    androidx.activity.compose.BackHandler(enabled = trimTarget != null) {
+        vm.closeTrim()
+    }
     // 当前页实况播放状态
     var livePlaying by remember { mutableStateOf(false) }
     // 用户是否手动隐藏上下栏（点图片切换）；视频播放时不受此影响
@@ -366,6 +377,7 @@ fun ViewerScreen(
                         livePlaying = true
                     }
                 },
+                onTrim = { currentItem?.let { vm.onTrim(it) } },
             )
         }
 
@@ -421,6 +433,17 @@ fun ViewerScreen(
                 },
             )
         }
+
+        // 剪辑界面（全屏覆盖层）
+        trimTarget?.let { trimItem ->
+            TrimScreen(
+                item = trimItem,
+                busy = trimBusy,
+                onImageExport = { f, r -> vm.exportImageEdit(f, r) },
+                onVideoExport = { s, e -> vm.exportVideoClip(s, e) },
+                onDismiss = { vm.closeTrim() },
+            )
+        }
     }
 }
 
@@ -435,6 +458,7 @@ private fun ViewerTopBar(
     livePlaying: Boolean,
     onBack: () -> Unit,
     onToggleLive: () -> Unit,
+    onTrim: () -> Unit = {},
 ) {
     val tint = rememberGlassTint(0.6f)
     val glass = if (sampling) {
@@ -494,6 +518,16 @@ private fun ViewerTopBar(
                         imageVector = Icons.Filled.PlayArrow,
                         contentDescription = if (livePlaying) "暂停实况" else "播放实况",
                         tint = if (livePlaying) FavoriteGold else MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+            // 剪辑入口：右上角（图片滤镜/旋转、视频裁剪）
+            if (item != null) {
+                IconButton(onClick = onTrim, modifier = Modifier.size(44.dp)) {
+                    Icon(
+                        imageVector = Icons.Outlined.Crop,
+                        contentDescription = "剪辑",
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
